@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="RetroGrind.vcxproj" />
+  <Project Path="RetroGrind.vcxproj" Id="b1c075ca-455e-4665-ba5f-6386c41d85ba" />
 </Solution>
