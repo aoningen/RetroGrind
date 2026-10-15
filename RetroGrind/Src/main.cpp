@@ -1,4 +1,4 @@
-ï»¿#include "DxLib.h"
+#include "DxLib.h"
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
@@ -7,27 +7,37 @@ int WINAPI WinMain(
     _In_ int nCmdShow
 )
 {
-    // ç”»é¢ãƒ¢ãƒ¼ãƒ‰è¨­å®š
+    //ƒAƒ“ƒ`ƒGƒCƒŠƒAƒX‚Ì—LŒø‰»
+    SetFullSceneAntiAliasingMode(4, 2);
+
+    // ‰æ–Êİ’è
     ChangeWindowMode(TRUE);
     SetGraphMode(1280, 720, 32);
 
     if (DxLib_Init() == -1) return -1;
 
     SetDrawScreen(DX_SCREEN_BACK);
+    //”wŒiF‚ğƒOƒŒ[‚É‚·‚é
+    SetBackgroundColor(128, 128, 128);
+
 
     // --------------------------------------------------
-    // 3Dæç”»ãƒ»ãƒ©ã‚¤ãƒ†ã‚£ãƒ³ã‚°ã®å…¨ä½“è¨­å®š
+    // 1. 3D•`‰æEƒ‰ƒCƒeƒBƒ“ƒO‚Ì‘S‘Ìİ’è
     // --------------------------------------------------
-    // ã€è¿½åŠ ã€‘Zãƒãƒƒãƒ•ã‚¡ã‚’æœ‰åŠ¹ã«ã—ã¦ã€å¥¥ã®ã‚‚ã®ãŒæ‰‹å‰ã«é€ã‘ãªã„ã‚ˆã†ã«ã™ã‚‹
+    //Zƒoƒbƒtƒ@—LŒø‰»
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);
 
-    SetUseBackCulling(TRUE);                                // ä¸¡é¢æç”»ï¼ˆãƒãƒªã‚´ãƒ³ã®æ¬ ã‘é˜²æ­¢ï¼‰
-    SetGlobalAmbientLight(GetColorF(0.4f, 0.4f, 0.4f, 1.0f)); // ç’°å¢ƒå…‰ã®è¨­å®š
+    SetUseBackCulling(TRUE);
+
+    SetUseLighting(TRUE);
+ 
     SetLightEnable(TRUE);
+    SetGlobalAmbientLight(GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
+    SetLightDirection(VGet(0.4f, -1.0f, 0.5f));
 
     // --------------------------------------------------
-    // 1. 3Dãƒ¢ãƒ‡ãƒ«ã®èª­ã¿è¾¼ã¿ (.mv1)
+    // 2. ƒ‚ƒfƒ‹‚Ì“Ç‚İ‚İ‚Æİ’è
     // --------------------------------------------------
     int stageHandle = MV1LoadModel("Assets/Models/RecordPlayer.mv1");
     int diskHandle = MV1LoadModel("Assets/Models/RecordDisk.mv1");
@@ -38,49 +48,60 @@ int WINAPI WinMain(
         return -1;
     }
 
-    // --------------------------------------------------
-    // 2. é…ç½®ãŠã‚ˆã³ã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆæ‹¡å¤§ç‡ï¼‰ã®è¨­å®š
-    // --------------------------------------------------
+    //ƒ}ƒeƒŠƒAƒ‹‚Ì”½ËŒõ‚ğ”’‚É‹ß•t‚¯‚é
+    int matNum = MV1GetMaterialNum(diskHandle);
+    for (int i = 0; i < matNum; i++)
+    {
+        MV1SetMaterialSpcColor(diskHandle, i, GetColorF(0.8f, 0.8f, 0.8f, 1.0f));
+        MV1SetMaterialSpcPower(diskHandle, i, 20.0f);
+    }
+
+    // Šé‰æ‘‚Ì’Ê‚èA‰ñ“]²‚Æ‚È‚é’†‰›(0, 0, 0)‚ÉŒ´“_‚ğ”z’u[cite: 17]
     MV1SetPosition(stageHandle, VGet(0.0f, 0.0f, 0.0f));
-    MV1SetPosition(diskHandle, VGet(0.0f, 5.0f, 0.0f));
-    // å‰å›ç¶ºéº—ã«æ˜ ã£ã¦ã„ãŸ 0.2f ã«è¨­å®š
+    MV1SetPosition(diskHandle, VGet(0.0f, 0.0f, 0.0f));
+
+    //‚à‚µƒŒƒR[ƒh”Õ‚Æ“y‘ä‚Ì–Ê‚ªd‚È‚Á‚Äƒ`ƒ‰‚Â‚­(Zƒtƒ@ƒCƒeƒBƒ“ƒO)ê‡A
+    //diskHandle‚ÌYÀ•W‚ğ’²®‚·‚é
+
+    // ƒXƒP[ƒ‹İ’è
     MV1SetScale(stageHandle, VGet(0.2f, 0.2f, 0.2f));
     MV1SetScale(diskHandle, VGet(0.2f, 0.2f, 0.2f));
 
     // --------------------------------------------------
-    // 3. ã‚«ãƒ¡ãƒ©è¦–ç‚¹è¨­å®š
+    // 3. ƒJƒƒ‰‹“_İ’è
     // --------------------------------------------------
+    // Near‚ğ10.0f‚Éİ’è‚µA–Ê“¯m‚Ì•`‰æƒuƒŒ‚ğ–h~
     SetCameraNearFar(10.0f, 10000.0f);
 
-    // æ‰‹å‰ã‹ã‚‰å°‘ã—è¦‹ä¸‹ã‚ã™ä½ç½®ã«é…ç½®
+    // è‘O‚©‚ç­‚µŒ©‰º‚ë‚·ˆÊ’u‚É”z’u
     SetCameraPositionAndTarget_UpVecY(
-        VGet(0.0f, 250.0f, -400.0f), // ã‚«ãƒ¡ãƒ©ã®ä½ç½® (X, Y, Z)
-        VGet(0.0f, 30.0f, 0.0f)       // æ³¨è¦–ç‚¹
+        VGet(0.0f, 450.0f,-250.0f),
+        VGet(0.0f, 30.0f, 0.0f)
     );
 
     float diskRotationAngle = 0.0f;
 
     // --------------------------------------------------
-    // ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—
+    // ƒƒCƒ“ƒ‹[ƒv
     // --------------------------------------------------
     while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
     {
         ClearDrawScreen();
 
-        // å›è»¢æ›´æ–°å‡¦ç†
+        // Šé‰æ‘d—lFƒvƒŒƒCƒ„[‚Ì‘–‚è‚É‡‚í‚¹‚ÄƒŒƒR[ƒh”Õ©‘Ì‚ª‰ñ“]‚·‚é
+        // –ˆƒtƒŒ[ƒ€­‚µ‚¸‚ÂY²ic²j‚ğ’†S‚É‰ñ“]
         diskRotationAngle += 0.02f;
         MV1SetRotationXYZ(diskHandle, VGet(0.0f, diskRotationAngle, 0.0f));
 
-        // æç”»å®Ÿè¡Œ
+        // •`‰æÀs
         MV1DrawModel(stageHandle);
         MV1DrawModel(diskHandle);
 
-        DrawString(20, 20, "ã€æˆåŠŸã€‘ãƒ¢ãƒ‡ãƒ«æç”»æ­£å¸¸åŒ–ç¢ºèªä¸­", GetColor(0, 255, 0));
+        DrawString(20, 20, "yRetro Grindz•`‰æƒx[ƒXE‰ñ“]À‘•Š®—¹", GetColor(0, 255, 0));
 
         ScreenFlip();
     }
 
-    // ãƒ¡ãƒ¢ãƒªè§£é™¤
     MV1DeleteModel(stageHandle);
     MV1DeleteModel(diskHandle);
 
