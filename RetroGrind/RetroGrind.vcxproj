@@ -19,11 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\GameApp.cpp" />
+    <ClCompile Include="Src\AssetManager.cpp" />
     <ClCompile Include="Src\main.cpp" />
+    <ClCompile Include="Src\Stage.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\GameApp.h" />
+    <ClInclude Include="Src\AssetManager.h" />
+    <ClInclude Include="Src\Stage.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

@@ -1,4 +1,6 @@
 #include "DxLib.h"
+#include "AssetManager.h"
+#include "Stage.h"
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
@@ -7,79 +9,46 @@ int WINAPI WinMain(
     _In_ int nCmdShow
 )
 {
-    //アンチエイリアスの有効化
+    // 高画質化（アンチエイリアス）
     SetFullSceneAntiAliasingMode(4, 2);
 
-    // 画面設定
     ChangeWindowMode(TRUE);
     SetGraphMode(1280, 720, 32);
 
     if (DxLib_Init() == -1) return -1;
 
     SetDrawScreen(DX_SCREEN_BACK);
-    //背景色をグレーにする
-    SetBackgroundColor(128, 128, 128);
-
 
     // --------------------------------------------------
-    // 1. 3D描画・ライティングの全体設定
+    // DxLibの全体設定（背景・Zバッファ・カリング・ライト）
     // --------------------------------------------------
-    //Zバッファ有効化
+    SetBackgroundColor(128, 128, 128); // グレー背景
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);
-
     SetUseBackCulling(TRUE);
 
-    SetUseLighting(TRUE);
- 
     SetLightEnable(TRUE);
-    SetGlobalAmbientLight(GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
-    SetLightDirection(VGet(0.4f, -1.0f, 0.5f));
+    SetGlobalAmbientLight(GetColorF(0.4f, 0.4f, 0.4f, 1.0f));
+    SetLightDirection(VGet(0.0f, -1.0f, 0.0f)); // 上から下への光
 
-    // --------------------------------------------------
-    // 2. モデルの読み込みと設定
-    // --------------------------------------------------
-    int stageHandle = MV1LoadModel("Assets/Models/RecordPlayer.mv1");
-    int diskHandle = MV1LoadModel("Assets/Models/RecordDisk.mv1");
-
-    if (stageHandle == -1 || diskHandle == -1)
-    {
-        DxLib_End();
-        return -1;
-    }
-
-    //マテリアルの反射光を白に近付ける
-    int matNum = MV1GetMaterialNum(diskHandle);
-    for (int i = 0; i < matNum; i++)
-    {
-        MV1SetMaterialSpcColor(diskHandle, i, GetColorF(0.8f, 0.8f, 0.8f, 1.0f));
-        MV1SetMaterialSpcPower(diskHandle, i, 20.0f);
-    }
-
-    // 企画書の通り、回転軸となる中央(0, 0, 0)に原点を配置[cite: 17]
-    MV1SetPosition(stageHandle, VGet(0.0f, 0.0f, 0.0f));
-    MV1SetPosition(diskHandle, VGet(0.0f, 0.0f, 0.0f));
-
-    //もしレコード盤と土台の面が重なってチラつく(Zファイティング)場合、
-    //diskHandleのY座標を調整する
-
-    // スケール設定
-    MV1SetScale(stageHandle, VGet(0.2f, 0.2f, 0.2f));
-    MV1SetScale(diskHandle, VGet(0.2f, 0.2f, 0.2f));
-
-    // --------------------------------------------------
-    // 3. カメラ視点設定
-    // --------------------------------------------------
-    // Nearを10.0fに設定し、面同士の描画ブレを防止
+    // カメラの設定（左斜め上からの見下ろし視点）
     SetCameraNearFar(10.0f, 10000.0f);
-
-    // 手前から少し見下ろす位置に配置
     SetCameraPositionAndTarget_UpVecY(
-        VGet(0.0f, 450.0f,-250.0f),
+        VGet(-150.0f, 450.0f, -400.0f),
         VGet(0.0f, 30.0f, 0.0f)
     );
 
-    float diskRotationAngle = 0.0f;
+    // --------------------------------------------------
+    // クラスのインスタンス生成と初期化
+    // --------------------------------------------------
+    AssetManager assetManager;
+    Stage stage;
+
+    // ステージ初期化（内部でモデルをロード）
+    if (!stage.Initialize(assetManager)) {
+        DxLib_End();
+        return -1;
+    }
 
     // --------------------------------------------------
     // メインループ
@@ -88,22 +57,15 @@ int WINAPI WinMain(
     {
         ClearDrawScreen();
 
-        // 企画書仕様：プレイヤーの走りに合わせてレコード盤自体が回転する
-        // 毎フレーム少しずつY軸（縦軸）を中心に回転
-        diskRotationAngle += 0.02f;
-        MV1SetRotationXYZ(diskHandle, VGet(0.0f, diskRotationAngle, 0.0f));
-
-        // 描画実行
-        MV1DrawModel(stageHandle);
-        MV1DrawModel(diskHandle);
-
-        DrawString(20, 20, "【Retro Grind】描画ベース・回転実装完了", GetColor(0, 255, 0));
+        // クラスの処理を呼び出す
+        stage.Update();
+        stage.Draw();
 
         ScreenFlip();
     }
 
-    MV1DeleteModel(stageHandle);
-    MV1DeleteModel(diskHandle);
+    // ※whileループを抜けた後、assetManagerのデストラクタが自動で呼ばれ
+    //   MV1DeleteModel(全モデルのメモリ解放) が安全に行われます。
 
     DxLib_End();
     return 0;
